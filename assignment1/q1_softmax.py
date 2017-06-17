@@ -31,12 +31,17 @@ def softmax(x):
     if len(x.shape) > 1:
         # Matrix
         ### YOUR CODE HERE
-        raise NotImplementedError
+        y = []
+        for j in range(orig_shape[0]):
+            y.append(np.exp(x[j]-x[j].max())/np.sum(np.exp(x[j]-x[j].max())))
+        # raise NotImplementedError
         ### END YOUR CODE
+        x = np.array(y)
     else:
         # Vector
         ### YOUR CODE HERE
-        raise NotImplementedError
+        x = np.exp(x-x.max())/np.sum(np.exp(x-x.max()))
+        # raise NotImplementedError
         ### END YOUR CODE
 
     assert x.shape == orig_shape
@@ -49,7 +54,7 @@ def test_softmax_basic():
     Warning: these are not exhaustive.
     """
     print "Running basic tests..."
-    test1 = softmax(np.array([1,2]))
+    test1 = softmax(np.array([1001,1002]))
     print test1
     ans1 = np.array([0.26894142,  0.73105858])
     assert np.allclose(test1, ans1, rtol=1e-05, atol=1e-06)
