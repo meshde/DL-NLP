@@ -36,7 +36,19 @@ def forward_backward_prop(data, labels, params, dimensions):
     b2 = np.reshape(params[ofs:ofs + Dy], (1, Dy))
 
     ### YOUR CODE HERE: forward propagation
-    raise NotImplementedError
+    # print data[0].reshape(1,Dx).shape
+    # z = np.add(W1.T.dot(data[0]),b1)
+    # z = W1.T.dot(data[0].reshape(1,Dx)) + b1
+    # x = data[0].reshape(1,Dx)
+    x = data
+    z1 = np.add(x.dot(W1),b1)
+    h = 1 / (1+np.exp(np.multiply(z1,-1)))
+    print h.shape
+    z2 = np.add(h.dot(W2),b2)
+    # y = 1 / (1+np.exp(np.multiply(z2,-1)))
+    y = np.exp(z2) / np.sum(np.exp(z2))
+    # print y,labels
+    # raise NotImplementedError
     ### END YOUR CODE
 
     ### YOUR CODE HERE: backward propagation
