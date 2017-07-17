@@ -125,3 +125,60 @@ class RNN(object):
 		return np.argmax(self.o,axis=1)
 	def loss_function(self):
 		return NeuralNet.cross_entropy(self.X,self.Y)
+
+
+import theano
+import theano.tensor as T
+
+
+class RNN_Theano(object):
+	def __init__(self,word_dim,hidden_dim):
+		U = np.random.uniform(-np.sqrt(1./word_dim),np.sqrt(1./word_dim),(word_dim,hidden_dim))
+		V = np.random.uniform(-np.sqrt(1./hidden_dim),np.sqrt(1./hidden_dim),(hidden_dim,word_dim))
+		W = np.random.uniform(-np.sqrt(1./hidden_dim),np.sqrt(1./hidden_dim),(hidden_dim,hidden_dim))
+
+		self.hidden_dim = hidden_dim
+		self.word_dim = word_dim
+
+		self.U = theano.shared(name='U',value=U.astype(theano.config.floatX))
+		self.V = theano.shared(name='V',value=V.astype(theano.config.floatX))
+		self.W = theano.shared(name='W',value=W.astype(theano.config.floatX))
+		self.__theano_build__()
+
+	@staticmethod
+	def step_forward(xt,ot_prev,st_prev,U,V,W):
+		print st_prev
+		st = T.tanh(T.dot(xt,U)+T.dot(st_prev,W))
+		ot = T.nnet.softmax(T.dot(st,V))
+		# print ot
+		# print st
+		return ot[0],st
+
+	def __theano_build__(self):
+		x = T.ivector('x')
+		y = T.ivector('y')
+
+		# s = T.matrix('s')
+
+		results, updates = theano.scan(RNN_Theano.step_forward,sequences=x,outputs_info=[dict(initial=T.zeros((1,self.word_dim))),dict(initial=T.zeros((1,self.hidden_dim)))],non_sequences=[self.U,self.V,self.W],strict=True)
+
+		o = results[0]
+		s = results[1]
+		self.prediction = T.argmax(o,axis=1)
+		o_error = T.sum(T.nnet.categorical_crossentropy(o,y))
+
+		self.dU = T.grad(o_error,self.U)
+		self.dV = T.grad(o_error,self.V)
+		self.dW = T.grad(o_error,self.W)
+
+		self.forward_propogation = theano.function([x],o)
+		self.predict = theano.function([x],prediction)
+		self.ce_error = theano.function([x,y],o_error)
+		self.bptt = theano.function([x,y],[dU,dV,dW])
+
+		learning_rate = T.scalar('learning_rate')
+		self.sgd_step = theano.function([x,y,learning_rate],[],
+			updates=[(self.U, self.U - learning_rate * dU),
+					(self.V,self.V - learning_rate * dV),
+					(self.W, self.W - learning_rate * dW)])
+
