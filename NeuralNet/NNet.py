@@ -129,7 +129,15 @@ class RNN(object):
 
 import theano
 import theano.tensor as T
+import time
+import pickle
+import sys
 
+debug = False
+if debug:
+	theano.config.optimizer='fast_compile'
+	theano.config.exception_verbosity='high'
+	theano.config.compute_test_value = 'warn'
 
 class RNN_Theano(object):
 	def __init__(self,word_dim,hidden_dim):
@@ -147,23 +155,48 @@ class RNN_Theano(object):
 
 	@staticmethod
 	def step_forward(xt,ot_prev,st_prev,U,V,W):
-		print st_prev
+		# print st_prev.dimshuffle('x',0).type()
+		# print st_prev.type()
+		# print xt.type()
+		# print U.type()
+		# print V.type()
+		# print W.type()
 		st = T.tanh(T.dot(xt,U)+T.dot(st_prev,W))
 		ot = T.nnet.softmax(T.dot(st,V))
-		# print ot
-		# print st
-		return ot[0],st
+		# print ot_prev.type()
+		# print ot.type()
+		# print st.type()
+		# a = T.dot(xt,U)
+		# if debug: print a.tag.test_value.shape
+		# b = T.dot(st_prev,W)
+		# if debug: print b.tag.test_value.shape
+		# c = a+b
+		# st = T.tanh(c)
+		# ot = T.nnet.softmax(T.dot(st,V))
+		return ot,st
 
 	def __theano_build__(self):
-		x = T.ivector('x')
-		y = T.ivector('y')
+		x = T.dtensor3('x')
+		if debug: x.tag.test_value = np.random.random((10,1,self.word_dim))
+		y = T.lvector('y')
+		if debug:
+			tst = np.zeros((self.word_dim),dtype=np.int)
+			tst[np.random.randint(self.word_dim)] = 1
+			y.tag.test_value = tst
 
 		# s = T.matrix('s')
 
-		results, updates = theano.scan(RNN_Theano.step_forward,sequences=x,outputs_info=[dict(initial=T.zeros((1,self.word_dim))),dict(initial=T.zeros((1,self.hidden_dim)))],non_sequences=[self.U,self.V,self.W],strict=True)
+		results, updates = theano.scan(RNN_Theano.step_forward,sequences=x,
+			outputs_info=[dict(initial=T.patternbroadcast(T.zeros((1,self.word_dim)),(False,False))),
+			dict(initial=T.patternbroadcast(T.zeros((1,self.hidden_dim)),(False,False)))],
+			non_sequences=[self.U,self.V,self.W],strict=True,truncate_gradient=4)
 
-		o = results[0]
+		o = results[0][-1]
 		s = results[1]
+		# print o.type(),y.type()
+		if debug: print o.tag.test_value
+		# theano.pp(o)
+		# time.sleep(1)
 		self.prediction = T.argmax(o,axis=1)
 		o_error = T.sum(T.nnet.categorical_crossentropy(o,y))
 
@@ -172,13 +205,18 @@ class RNN_Theano(object):
 		self.dW = T.grad(o_error,self.W)
 
 		self.forward_propogation = theano.function([x],o)
-		self.predict = theano.function([x],prediction)
+		self.predict = theano.function([x],self.prediction)
 		self.ce_error = theano.function([x,y],o_error)
-		self.bptt = theano.function([x,y],[dU,dV,dW])
+		self.bptt = theano.function([x,y],[self.dU,self.dV,self.dW])
 
 		learning_rate = T.scalar('learning_rate')
+		learning_rate.tag.test_value = 0.1
 		self.sgd_step = theano.function([x,y,learning_rate],[],
-			updates=[(self.U, self.U - learning_rate * dU),
-					(self.V,self.V - learning_rate * dV),
-					(self.W, self.W - learning_rate * dW)])
-
+			updates=[(self.U, self.U - learning_rate * self.dU),
+					(self.V,self.V - learning_rate * self.dV),
+					(self.W, self.W - learning_rate * self.dW)])
+	def save(self,file):
+		sys.setrecursionlimit(5000)
+		with open(file,'wb') as f:
+			pickle.dump(self,f)
+		return
