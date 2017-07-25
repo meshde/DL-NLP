@@ -40,7 +40,8 @@ def main():
 				# print x
 				x = np.reshape(x,(1,1,DIM))
 				model.sgd_step(x,y,learning_rate)
-	model.save('tst2.pkl')
+	# print model.s
+	model.save('tst4.pkl')
 	return
 
 if __name__ == '__main__':

@@ -144,13 +144,16 @@ class RNN_Theano(object):
 		U = np.random.uniform(-np.sqrt(1./word_dim),np.sqrt(1./word_dim),(word_dim,hidden_dim))
 		V = np.random.uniform(-np.sqrt(1./hidden_dim),np.sqrt(1./hidden_dim),(hidden_dim,word_dim))
 		W = np.random.uniform(-np.sqrt(1./hidden_dim),np.sqrt(1./hidden_dim),(hidden_dim,hidden_dim))
-
+		state = np.zeros((1,hidden_dim))
+		
 		self.hidden_dim = hidden_dim
 		self.word_dim = word_dim
 
 		self.U = theano.shared(name='U',value=U.astype(theano.config.floatX))
 		self.V = theano.shared(name='V',value=V.astype(theano.config.floatX))
 		self.W = theano.shared(name='W',value=W.astype(theano.config.floatX))
+		self.state = theano.shared(name='S',value=state.astype(theano.config.floatX))
+
 		self.__theano_build__()
 
 	@staticmethod
@@ -188,8 +191,8 @@ class RNN_Theano(object):
 
 		results, updates = theano.scan(RNN_Theano.step_forward,sequences=x,
 			outputs_info=[dict(initial=T.patternbroadcast(T.zeros((1,self.word_dim)),(False,False))),
-			dict(initial=T.patternbroadcast(T.zeros((1,self.hidden_dim)),(False,False)))],
-			non_sequences=[self.U,self.V,self.W],strict=True,truncate_gradient=4)
+			dict(initial=self.state)],
+			non_sequences=[self.U,self.V,self.W],strict=True,truncate_gradient=9)
 
 		o = results[0][-1]
 		s = results[1]
@@ -204,7 +207,7 @@ class RNN_Theano(object):
 		self.dV = T.grad(o_error,self.V)
 		self.dW = T.grad(o_error,self.W)
 
-		self.forward_propogation = theano.function([x],o)
+		self.forward_propogation = theano.function([x],[o,s],updates=[(self.state,s[-1])])
 		self.predict = theano.function([x],self.prediction)
 		self.ce_error = theano.function([x,y],o_error)
 		self.bptt = theano.function([x,y],[self.dU,self.dV,self.dW])
