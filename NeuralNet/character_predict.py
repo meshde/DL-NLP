@@ -1,6 +1,9 @@
 import numpy as np
 import pickle
-from character_train import form_one_hot 
+from helper import form_one_hot
+from helper import get_one_hot
+from helper import get_char
+from helper import load_dic
 
 FILE = 'tst4.pkl'
 INIT = 'We are accounted poor citizens, the patricians good.What authority surfeits on would relieve us'

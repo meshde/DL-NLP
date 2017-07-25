@@ -1,26 +1,21 @@
 from NNet import RNN_Theano as RNN
+from helper import form_one_hot
+from helper import get_one_hot
+from helper import load_dic
 import numpy as np
 import theano
 import theano.tensor as T
 import time
 import sys
 import traceback
+import pickle
 
 DIM = 27
 
-def form_one_hot(char):
-	char = char.upper()
-	result = np.zeros(DIM,dtype=np.int64)
-	if char == ' ':
-		result[-1] = 1
-		return result
-	if ord('Z') >= ord(char) and ord('A') <= ord(char):
-		result[ord(char)-ord('A')] = 1
-		return result
-	return result
-
 def main():
 	global DIM
+	dic = load_dic('shake.pkl')
+	DIM = len(dic)
 	model = RNN(DIM,64)
 	with open('shake.txt','r') as f:
 		for line in f:
