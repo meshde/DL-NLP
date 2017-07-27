@@ -1,5 +1,6 @@
 import time
 import pickle
+import numpy as np
 
 def create_word_dic(input,output):
 	d = dict()
