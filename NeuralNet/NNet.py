@@ -217,7 +217,8 @@ class RNN_Theano(object):
 		self.sgd_step = theano.function([x,y,learning_rate],[],
 			updates=[(self.U, self.U - learning_rate * self.dU),
 					(self.V,self.V - learning_rate * self.dV),
-					(self.W, self.W - learning_rate * self.dW)])
+					(self.W, self.W - learning_rate * self.dW),
+					(self.state,s[-1])])
 	def save(self,file):
 		sys.setrecursionlimit(5000)
 		with open(file,'wb') as f:

@@ -28,7 +28,7 @@ def main():
 				learning_rate = 0.4
 				x = np.reshape(x,(1,1,DIM))
 				model.sgd_step(x,y,learning_rate)
-	model.save('tst4.pkl')
+	model.save('tst5.pkl')
 	return
 
 if __name__ == '__main__':
