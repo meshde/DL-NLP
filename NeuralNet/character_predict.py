@@ -5,7 +5,7 @@ from helper import get_one_hot
 from helper import get_char
 from helper import load_dic
 
-FILE = 'tst5.pkl'
+FILE = 'tst6.pkl'
 INIT = 'We are accounted poor citizens, the patricians good.What authority surfeits on would relieve us'
 
 def get_model(filename):
@@ -43,9 +43,9 @@ def test(model,inp):
 		vector = vectorize_statement(inp)
 		res,state = model.forward_propogation(vector)
 		print 'Result:'
-		print res.shape
+		print res
 		print 'State:'
-		print state.shape
+		print state
 		out = get_char(np.argmax(res[0]),dic)
 		result += out
 		inp = out

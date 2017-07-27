@@ -25,10 +25,10 @@ def main():
 				except IndexError:
 					# print Exception
 					continue
-				learning_rate = 0.4
+				learning_rate = 0.005
 				x = np.reshape(x,(1,1,DIM))
 				model.sgd_step(x,y,learning_rate)
-	model.save('tst5.pkl')
+	model.save('tst6.pkl')
 	return
 
 if __name__ == '__main__':
